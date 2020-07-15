@@ -63,6 +63,8 @@ import org.webrtc.PeerConnectionFactory.Options;
 import org.webrtc.SdpObserver;
 import org.webrtc.SessionDescription;
 import org.webrtc.SessionDescription.Type;
+import org.webrtc.SoftwareVideoDecoderFactory;
+import org.webrtc.SoftwareVideoEncoderFactory;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
@@ -144,8 +146,8 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
 
     mFactory = PeerConnectionFactory.builder()
         .setOptions(new Options())
-        .setVideoEncoderFactory(new DefaultVideoEncoderFactory(eglContext, false, true))
-        .setVideoDecoderFactory(new DefaultVideoDecoderFactory(eglContext))
+        .setVideoEncoderFactory(new SoftwareVideoEncoderFactory())
+        .setVideoDecoderFactory(new SoftwareVideoDecoderFactory())
         .setAudioDeviceModule(audioDeviceModule)
         .createPeerConnectionFactory();
   }
