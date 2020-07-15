@@ -7,6 +7,7 @@ import android.content.Context;
 import android.graphics.SurfaceTexture;
 import android.hardware.Camera;
 import android.hardware.Camera.CameraInfo;
+import android.os.Build;
 import android.util.Log;
 import android.util.LongSparseArray;
 import androidx.annotation.NonNull;
@@ -65,6 +66,8 @@ import org.webrtc.SessionDescription;
 import org.webrtc.SessionDescription.Type;
 import org.webrtc.SoftwareVideoDecoderFactory;
 import org.webrtc.SoftwareVideoEncoderFactory;
+import org.webrtc.VideoDecoderFactory;
+import org.webrtc.VideoEncoderFactory;
 import org.webrtc.VideoTrack;
 import org.webrtc.audio.AudioDeviceModule;
 import org.webrtc.audio.JavaAudioDeviceModule;
@@ -131,9 +134,6 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
             .setEnableInternalTracer(true)
             .createInitializationOptions());
 
-    // Initialize EGL contexts required for HW acceleration.
-    EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
-
     getUserMediaImpl = new GetUserMediaImpl(this, context);
 
     audioDeviceModule = JavaAudioDeviceModule.builder(context)
@@ -144,10 +144,23 @@ public class MethodCallHandlerImpl implements MethodCallHandler, StateProvider {
 
     getUserMediaImpl.audioDeviceModule = (JavaAudioDeviceModule) audioDeviceModule;
 
+    VideoEncoderFactory encoderFactory;
+    VideoDecoderFactory decoderFactory;
+
+    if (Build.MODEL.startsWith("SM-G935") || Build.MODEL.startsWith("SM-G930")) {
+      encoderFactory = new SoftwareVideoEncoderFactory();
+      decoderFactory = new SoftwareVideoDecoderFactory();
+    } else {
+      // Initialize EGL contexts required for HW acceleration.
+      EglBase.Context eglContext = EglUtils.getRootEglBaseContext();
+      encoderFactory = new DefaultVideoEncoderFactory(eglContext, false, true);
+      decoderFactory = new DefaultVideoDecoderFactory(eglContext);
+    }
+
     mFactory = PeerConnectionFactory.builder()
         .setOptions(new Options())
-        .setVideoEncoderFactory(new SoftwareVideoEncoderFactory())
-        .setVideoDecoderFactory(new SoftwareVideoDecoderFactory())
+        .setVideoEncoderFactory(encoderFactory)
+        .setVideoDecoderFactory(decoderFactory)
         .setAudioDeviceModule(audioDeviceModule)
         .createPeerConnectionFactory();
   }
